@@ -22,22 +22,22 @@ const Authentication = () => {
       <View style={styles.mainContainer}>
         {isSignUp && (
           <View style={styles.textFieldContainer}>
-            <Text>Epost</Text>
+            <Text>Brukernavn</Text>
             <TextInput
-              value={userEmail}
-              onChangeText={setUserEmail}
+              value={userName}
+              onChangeText={setUserName}
               style={styles.textField}
-              placeholder="Epost"
+              placeholder="Brukernavn"
             />
           </View>
         )}
         <View style={styles.textFieldContainer}>
-          <Text>Brukernavn</Text>
+          <Text>Epost</Text>
           <TextInput
-            value={userName}
-            onChangeText={setUserName}
+            value={userEmail}
+            onChangeText={setUserEmail}
             style={styles.textField}
-            placeholder="Brukernavn"
+            placeholder="Epost"
           />
         </View>
         <View style={styles.textFieldContainer}>
@@ -70,7 +70,7 @@ const Authentication = () => {
           <Pressable
             style={styles.primaryButton}
             onPress={() => {
-              signIn(userName);
+              signIn(userEmail, password);
             }}
           >
             <Text

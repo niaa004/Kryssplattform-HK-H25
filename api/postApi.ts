@@ -1,11 +1,23 @@
-import { db } from "@/firebaseConfig";
+import { db, getDownloadUrl } from "@/firebaseConfig";
 import { PostData } from "@/types/post";
 import { addDoc, collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { uploadImageToFirebase } from "./imageApi";
 
 
 export async function createPost(post: PostData) {
     try {
-        const docRef = await addDoc(collection(db, "posts"), post)
+        const firebaseImage = await uploadImageToFirebase(post.imageUri);
+        if (!firebaseImage) {
+            console.error("Error while uplaoding image");
+            return;
+        }
+
+        const postImageDownloadUrl = await getDownloadUrl(firebaseImage);
+        const postWithImage: PostData = {
+            ...post,
+            imageUri: postImageDownloadUrl
+        }
+        const docRef = await addDoc(collection(db, "posts"), postWithImage);
         console.log("Document written with ID: ", docRef.id);
     } catch(e) {
         console.log("Error creating post", e);

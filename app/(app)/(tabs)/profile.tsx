@@ -32,7 +32,7 @@ export default function ProfilePage() {
         <Pressable
           style={[style.button, { borderWidth: 2, borderColor: "gray" }]}
           onPress={() => {
-            signIn(userNameText);
+            // signIn(userNameText);
           }}
         >
           <Text>Logg inn</Text>
