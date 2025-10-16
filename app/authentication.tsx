@@ -9,7 +9,7 @@ const Authentication = () => {
 
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const { signIn } = useAuthSession();
+  const { signIn, createUser } = useAuthSession();
 
   return (
     <View
@@ -70,7 +70,11 @@ const Authentication = () => {
           <Pressable
             style={styles.primaryButton}
             onPress={() => {
-              signIn(userEmail, password);
+              if (isSignUp) {
+                createUser(userEmail, password, userName);
+              } else {
+                signIn(userEmail, password);
+              }
             }}
           >
             <Text

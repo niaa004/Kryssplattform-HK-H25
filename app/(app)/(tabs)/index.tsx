@@ -71,7 +71,7 @@ export default function HomeScreen() {
       <PostFormModal
         isVisible={isModalVisible}
         setIsVisible={setIsModalVisible}
-        // Nytt innlegg håndteres nå fra modalen, alt vi trenger her er å laste inn på nytt
+P        // Nytt innlegg håndteres nå fra modalen, alt vi trenger her er å laste inn på nytt
         confirmPostAdded={async () => {
           await getPostsFromApi();
         }}

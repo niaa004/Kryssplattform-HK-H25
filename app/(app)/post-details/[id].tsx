@@ -6,7 +6,6 @@ import { getPostByLocalId } from "@/utils/local-storage";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
   Image,
   Pressable,
   StyleSheet,
@@ -82,7 +81,7 @@ export default function PostDetailsPage() {
       <View style={styles.commentsContainer}>
         <Text style={styles.commentTitle}>Kommentarer</Text>
         <View style={styles.commentsList}>
-          <FlatList
+          {/* <FlatList
             data={post.comments}
             renderItem={(comment) => (
               <View style={styles.commentItem}>
@@ -94,11 +93,11 @@ export default function PostDetailsPage() {
                 </Text>
               </View>
             )}
-          />
+          /> */}
         </View>
         <View style={styles.addCommentContainer}>
           <TextInput
-            value={commentText}
+            // {/* value={commentText} */}
             onChangeText={setCommentText}
             style={styles.commentTextField}
             placeholder="Skriv en kommentar"
@@ -113,7 +112,7 @@ export default function PostDetailsPage() {
               };
 
               const postComments = post.comments;
-              postComments.push(newComment);
+              // postComments.push(newComment);
               // Dette kalles "object spread operator" og er en metode for å kopiere et object samtidig som man endrer en eller flere av verdiene
               const updatedPost: PostData = {
                 ...post,
