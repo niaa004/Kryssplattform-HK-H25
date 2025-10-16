@@ -1,11 +1,15 @@
 import { db } from "@/firebaseConfig";
 import { PostComment } from "@/types/post";
-import { addDoc, collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 
 
-export async function createComment(comment: PostComment) {
+export async function createComment(comment: PostComment, postId: string) {
     try {
         const docRef = await addDoc(collection(db, "comments"), comment);
+        const postRef = doc(db, "posts", postId);
+        await updateDoc(postRef, {
+            comments: arrayUnion(docRef.id),
+        });
         console.log("Document written with ID: ", docRef.id);
     } catch(e) {
         console.log("Error creating post", e);
@@ -29,8 +33,12 @@ export async function getCommentsByIds(ids: string[]) {
     }
 }
 
-export async function deleteComment(id: string) {
+export async function deleteComment(id: string, postId: string) {
     try {
+        const postRef = doc(db, "posts", postId);
+        await updateDoc(postRef, {
+            comments: arrayRemove(id)
+        })
         await deleteDoc(doc(db, "comments", id));
     } catch(e) {
         console.log("Error deleting comment", e);

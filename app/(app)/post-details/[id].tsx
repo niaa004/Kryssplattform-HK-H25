@@ -3,9 +3,11 @@ import * as postApi from "@/api/postApi";
 import { useAuthSession } from "@/providers/authctx";
 import { PostComment, PostData } from "@/types/post";
 import { getPostByLocalId } from "@/utils/local-storage";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  FlatList,
   Image,
   Pressable,
   StyleSheet,
@@ -17,10 +19,11 @@ import MapView, { Callout, Marker } from "react-native-maps";
 
 export default function PostDetailsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { userNameSession } = useAuthSession();
+  const { userNameSession, user } = useAuthSession();
 
   const [post, setPost] = useState<PostData | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<PostComment[]>([]);
 
   async function fetchPostFromLocal(inputId: string) {
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -33,23 +36,14 @@ export default function PostDetailsPage() {
   async function fetchPostFromApi(inputId: string) {
     const post = await postApi.getPostById(inputId);
     setPost(post);
+    if (post) {
+      await fetchCommentsFromApi(post.comments);
+    }
   }
 
-  // Dette er kun en testefunksjon for å se at ting fungerer, den vil bli fjernet senere
-  async function deleteCommentTEST(id: string) {
-    await commentApi.deleteComment(id);
-    fetchCommentsFromApiTEST();
-  }
-
-  // Dette er kun en testefunksjon for å se at ting fungerer, den vil bli fjernet senere
-  async function fetchCommentsFromApiTEST() {
-    const ids = [
-      "23v4qh8523XeVFAdrJpX",
-      "BDCZEnRvWayiYwnxBksP",
-      "rvgOEAMZQqyTquwWMuok",
-    ];
+  async function fetchCommentsFromApi(ids: string[]) {
     const comments = await commentApi.getCommentsByIds(ids);
-    console.log(comments);
+    setComments(comments);
   }
 
   useEffect(() => {
@@ -81,19 +75,37 @@ export default function PostDetailsPage() {
       <View style={styles.commentsContainer}>
         <Text style={styles.commentTitle}>Kommentarer</Text>
         <View style={styles.commentsList}>
-          {/* <FlatList
-            data={post.comments}
+          <FlatList
+            data={comments}
             renderItem={(comment) => (
-              <View style={styles.commentItem}>
-                <Text style={[styles.smallTextStyle, { color: "gray" }]}>
-                  {comment.item.author}:
-                </Text>
-                <Text style={styles.smallTextStyle}>
-                  {comment.item.comment}
-                </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={styles.commentItem}>
+                  <Text style={[styles.smallTextStyle, { color: "gray" }]}>
+                    {comment.item.author}:
+                  </Text>
+                  <Text style={styles.smallTextStyle}>
+                    {comment.item.comment}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    if (comment.item.authorId !== user?.uid) return;
+                    commentApi.deleteComment(comment.item.id, post.id);
+                    setComments(
+                      comments.filter((c) => c.id !== comment.item.id)
+                    );
+                  }}
+                >
+                  <MaterialIcons name="delete-outline" size={20} color="red" />
+                </Pressable>
               </View>
             )}
-          /> */}
+          />
         </View>
         <View style={styles.addCommentContainer}>
           <TextInput
@@ -106,25 +118,14 @@ export default function PostDetailsPage() {
             onPress={() => {
               const newComment: PostComment = {
                 id: commentText,
-                authorId: userNameSession ?? "Dette skal ikke skje",
+                authorId: user?.uid ?? "Dette skal ikke skje",
                 comment: commentText,
                 author: userNameSession ?? "Dette skal ikke skje",
               };
 
-              const postComments = post.comments;
-              // postComments.push(newComment);
-              // Dette kalles "object spread operator" og er en metode for å kopiere et object samtidig som man endrer en eller flere av verdiene
-              const updatedPost: PostData = {
-                ...post,
-                comments: postComments,
-              };
-
-              commentApi.createComment(newComment);
-              setPost(updatedPost);
+              commentApi.createComment(newComment, post.id);
+              setComments([...comments, newComment]);
               setCommentText("");
-
-              // fetchCommentsFromApiTEST();
-              // deleteCommentTEST("BDCZEnRvWayiYwnxBksP");
             }}
           >
             <Text style={styles.smallTextStyle}>Legg til</Text>
