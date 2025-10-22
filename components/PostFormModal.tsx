@@ -1,4 +1,5 @@
 import * as postApi from "@/api/postApi";
+import { useAuthSession } from "@/providers/authctx";
 import { PostData } from "@/types/post";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import * as Location from "expo-location";
@@ -34,6 +35,7 @@ export default function PostFormModal({
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthSession();
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [location, setLocation] =
@@ -124,6 +126,7 @@ export default function PostFormModal({
 
                     const newPost: PostData = {
                       id: titleText + descText,
+                      authorId: user?.uid ?? "ERROR", 
                       title: titleText,
                       description: descText,
                       imageUri: image,
@@ -137,6 +140,7 @@ export default function PostFormModal({
                     setDescText("");
                     confirmPostAdded();
                     setIsVisible(false);
+                    setImage(null);
 
                     setIsLoading(false);
                   }
