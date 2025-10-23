@@ -57,7 +57,7 @@ export async function signInWithGoogle() {
     if (isSuccessResponse(response)) {
       const user = GoogleSignin.getCurrentUser();
       if (user) {
-        const googleCredential = GoogleAuthProvider.credential();
+        const googleCredential = GoogleAuthProvider.credential(user.idToken);
         const userCredential = await signInWithCredential(
           auth,
           googleCredential
