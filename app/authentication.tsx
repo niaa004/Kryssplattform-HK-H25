@@ -1,3 +1,4 @@
+import * as authApi from "@/api/authApi";
 import { useAuthSession } from "@/providers/authctx";
 import React, { useState } from "react";
 import {
@@ -97,6 +98,20 @@ const Authentication = () => {
                 }}
               >
                 {isSignUp ? "Lag bruker" : "Logg inn"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={async () => {
+                await authApi.signInWithGoogle();
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                }}
+              >
+                Logg inn med google
               </Text>
             </Pressable>
           </View>
