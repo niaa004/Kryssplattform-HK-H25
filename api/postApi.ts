@@ -6,11 +6,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   where,
 } from "firebase/firestore";
 import { uploadImageToFirebase } from "./imageApi";
-
+// @react-native-google-signin/google-signin
 export async function createPost(post: PostData) {
   try {
     const firebaseImage = await uploadImageToFirebase(post.imageUri);
@@ -74,6 +75,42 @@ export async function getPostsForUser(userId: string) {
     });
   } catch (e) {
     console.log("Error getting all posts for user", e);
+    return [] as PostData[];
+  }
+}
+
+export async function getSortedPosts(isDescending: boolean) {
+  try {
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, "posts"),
+        orderBy("title", isDescending ? "desc" : "asc")
+      )
+    );
+    return querySnapshot.docs.map((doc) => {
+      return { ...doc.data(), id: doc.id } as PostData;
+    });
+  } catch (e) {
+    console.error("Error gettign sorted posts", e);
+    return [] as PostData[];
+  }
+}
+
+export async function getSearchedPosts(searchTerm: string) {
+  try {
+    const endTerm = searchTerm + "\uf8ff";
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, "posts"),
+        where("title", ">=", searchTerm),
+        where("title", "<=", endTerm)
+      )
+    );
+    return querySnapshot.docs.map((doc) => {
+      return { ...doc.data(), id: doc.id } as PostData;
+    });
+  } catch (e) {
+    console.error("Erro getting searched posts", e);
     return [] as PostData[];
   }
 }

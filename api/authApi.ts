@@ -1,6 +1,12 @@
 import { auth } from "@/firebaseConfig";
 import {
+  GoogleSignin,
+  isSuccessResponse,
+} from "@react-native-google-signin/google-signin";
+import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
   signInWithEmailAndPassword,
   updateProfile,
   User,
@@ -41,5 +47,24 @@ export async function setUserDisplayName(user: User, displayName: string) {
     });
   } catch (error) {
     console.error("Oops! kunne ikke oppdatere display name", error);
+  }
+}
+
+export async function signInWithGoogle() {
+  try {
+    await GoogleSignin.hasPlayServices();
+    const response = await GoogleSignin.signIn();
+    if (isSuccessResponse(response)) {
+      const user = GoogleSignin.getCurrentUser();
+      if (user) {
+        const googleCredential = GoogleAuthProvider.credential();
+        const userCredential = await signInWithCredential(
+          auth,
+          googleCredential
+        );
+      }
+    }
+  } catch (e) {
+    console.error("Error signing in with google", e);
   }
 }
