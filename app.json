@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.HK.undervisningsapp2",
+      "bundleIdentifier": "din egen",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
