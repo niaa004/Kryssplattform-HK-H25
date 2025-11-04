@@ -1,7 +1,9 @@
+import * as commentApi from "@/api/commentApi";
 import * as postApi from "@/api/postApi";
 import { useAuthSession } from "@/providers/authctx";
-import { PostData } from "@/types/post";
-import { getPostByLocalId, updatePostById } from "@/utils/local-storage";
+import { PostComment, PostData } from "@/types/post";
+import { getPostByLocalId } from "@/utils/local-storage";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -17,10 +19,11 @@ import MapView, { Callout, Marker } from "react-native-maps";
 
 export default function PostDetailsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { userNameSession } = useAuthSession();
+  const { userNameSession, user } = useAuthSession();
 
   const [post, setPost] = useState<PostData | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<PostComment[]>([]);
 
   async function fetchPostFromLocal(inputId: string) {
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -33,6 +36,14 @@ export default function PostDetailsPage() {
   async function fetchPostFromApi(inputId: string) {
     const post = await postApi.getPostById(inputId);
     setPost(post);
+    if (post) {
+      await fetchCommentsFromApi(post.comments);
+    }
+  }
+
+  async function fetchCommentsFromApi(ids: string[]) {
+    const comments = await commentApi.getCommentsByIds(ids);
+    setComments(comments);
   }
 
   useEffect(() => {
@@ -65,41 +76,55 @@ export default function PostDetailsPage() {
         <Text style={styles.commentTitle}>Kommentarer</Text>
         <View style={styles.commentsList}>
           <FlatList
-            data={post.comments}
+            data={comments}
             renderItem={(comment) => (
-              <View style={styles.commentItem}>
-                <Text style={[styles.smallTextStyle, { color: "gray" }]}>
-                  {comment.item.author}:
-                </Text>
-                <Text style={styles.smallTextStyle}>
-                  {comment.item.comment}
-                </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={styles.commentItem}>
+                  <Text style={[styles.smallTextStyle, { color: "gray" }]}>
+                    {comment.item.author}:
+                  </Text>
+                  <Text style={styles.smallTextStyle}>
+                    {comment.item.comment}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    if (comment.item.authorId !== user?.uid) return;
+                    commentApi.deleteComment(comment.item.id, post.id);
+                    setComments(
+                      comments.filter((c) => c.id !== comment.item.id)
+                    );
+                  }}
+                >
+                  <MaterialIcons name="delete-outline" size={20} color="red" />
+                </Pressable>
               </View>
             )}
           />
         </View>
         <View style={styles.addCommentContainer}>
           <TextInput
-            value={commentText}
+            // {/* value={commentText} */}
             onChangeText={setCommentText}
             style={styles.commentTextField}
             placeholder="Skriv en kommentar"
           />
           <Pressable
             onPress={() => {
-              const postComments = post.comments;
-              postComments.push({
+              const newComment: PostComment = {
+                id: commentText,
+                authorId: user?.uid ?? "Dette skal ikke skje",
                 comment: commentText,
                 author: userNameSession ?? "Dette skal ikke skje",
-              });
-              // Dette kalles "object spread operator" og er en metode for å kopiere et object samtidig som man endrer en eller flere av verdiene
-              const updatedPost: PostData = {
-                ...post,
-                comments: postComments,
               };
-              // cmd+click for å se hvor funksjonen er definert, den ligger under local-storage.tsx
-              updatePostById(id, updatedPost);
-              setPost(updatedPost);
+
+              commentApi.createComment(newComment, post.id);
+              setComments([...comments, newComment]);
               setCommentText("");
             }}
           >

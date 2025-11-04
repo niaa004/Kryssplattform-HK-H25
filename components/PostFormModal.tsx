@@ -1,8 +1,11 @@
+import * as postApi from "@/api/postApi";
+import { useAuthSession } from "@/providers/authctx";
 import { PostData } from "@/types/post";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
 import * as Location from "expo-location";
 import { useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -16,19 +19,23 @@ import SelectImageModal from "./SelectImageModal";
 export type PostModalProps = {
   isVisible: boolean;
   setIsVisible: (isVisible: boolean) => void;
-  // Callback funksjon, vi bruker denne til å "flytte" innlegget vårt ut til foreldrekomponenten
-  addPost: (post: PostData) => void;
+  // Endret navn på denne siden den ikke lenger legger til et innlegg, men bare bekrefter at det er gjort
+  // Jeg ønsker ikke å laste inn alle innlegg på nytt hver gang man lukker modalen, så vi bruker denne til
+  // å bekrefte at et nytt innlegg er laget og at man bør laste inn på nytt på hjemmesiden
+  confirmPostAdded: VoidFunction;
 };
 
 export default function PostFormModal({
   isVisible,
   setIsVisible,
-  addPost,
+  confirmPostAdded,
 }: PostModalProps) {
   const [titleText, setTitleText] = useState("");
   const [descText, setDescText] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [image, setImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuthSession();
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [location, setLocation] =
@@ -92,51 +99,65 @@ export default function PostFormModal({
             <Text>{locationPlaceholderText}</Text>
           )}
         </View>
-        <View style={styles.textInputContainer}>
-          <TextInput
-            style={styles.textInput}
-            value={titleText}
-            placeholder="Tittel"
-            onChangeText={setTitleText}
-          />
-          <TextInput
-            style={styles.textInput}
-            value={descText}
-            placeholder="Beskrivelse"
-            onChangeText={setDescText}
-          />
-        </View>
-        <View style={styles.buttonContainer}>
-          <Pressable
-            style={[styles.button, { borderWidth: 2, borderColor: "gray" }]}
-            onPress={() => {
-              if (image) {
-                const newPost: PostData = {
-                  id: titleText + descText,
-                  title: titleText,
-                  description: descText,
-                  imageUri: image,
-                  comments: [],
-                  postCoordinates: postCoordinatesData.current,
-                };
-                console.log(newPost);
-                // Huske å fjerne innholdet i tekstinput så vi får en ny start neste gang vi vil lage et innlegg
-                addPost(newPost);
-                setTitleText("");
-                setDescText("");
-                setIsVisible(false);
-              }
-            }}
-          >
-            <Text>Legg til</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setIsVisible(false)}
-            style={[styles.button, { backgroundColor: "gray" }]}
-          >
-            <Text>Lukk</Text>
-          </Pressable>
-        </View>
+        {isLoading ? (
+          <ActivityIndicator size={"large"} /> // Bytter ut mesteparten av innholdet med en spinner
+        ) : (
+          <>
+            <View style={styles.textInputContainer}>
+              <TextInput
+                style={styles.textInput}
+                value={titleText}
+                placeholder="Tittel"
+                onChangeText={setTitleText}
+              />
+              <TextInput
+                style={styles.textInput}
+                value={descText}
+                placeholder="Beskrivelse"
+                onChangeText={setDescText}
+              />
+            </View>
+            <View style={styles.buttonContainer}>
+              <Pressable
+                style={[styles.button, { borderWidth: 2, borderColor: "gray" }]}
+                onPress={async () => {
+                  if (image) {
+                    setIsLoading(true); // Setter til true for å vindikere at det jobbes med å laste opp innlegget
+
+                    const newPost: PostData = {
+                      id: titleText + descText,
+                      authorId: user?.uid ?? "ERROR", 
+                      title: titleText,
+                      description: descText,
+                      imageUri: image,
+                      comments: [],
+                      postCoordinates: postCoordinatesData.current,
+                    };
+
+                    await postApi.createPost(newPost);
+
+                    setTitleText("");
+                    setDescText("");
+                    confirmPostAdded();
+                    setIsVisible(false);
+                    setImage(null);
+
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                <Text>Legg til</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setIsVisible(false)}
+                style={[styles.button, { backgroundColor: "gray" }]}
+              >
+                <Text>Lukk</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </View>
     </Modal>
   );
